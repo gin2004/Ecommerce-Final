@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  product_db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: product_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123456
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  product_service:
+    build:
+      context: ./product_service # Trỏ vào thư mục chứa Dockerfile
+      dockerfile: Dockerfile
+    command: sh -c "python manage.py migrate && gunicorn product_service.wsgi:application --bind 0.0.0.0:8000"
+    volumes:
+      - ./product_service:/app
+    working_dir: /app
+    ports:
+      - "8001:8000"
+    depends_on:
+      - product_db
+    environment:
+      - DATABASE_URL=postgres://postgres:123456@product_db:5432/product_db
+
+volumes:
+  postgres_data:
